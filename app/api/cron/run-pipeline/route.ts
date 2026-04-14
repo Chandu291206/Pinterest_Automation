@@ -93,7 +93,7 @@ function toSearchIndex(theme: string): string {
 }
 
 function buildTrackingUrl(request: NextRequest, affiliateLinkId: string): string {
-  return new URL(`/go/${affiliateLinkId}`, request.url).toString();
+  return new URL(`/shop/${affiliateLinkId}`, request.url).toString();
 }
 
 async function getCampaignAffiliateLinks(campaignId: string): Promise<AffiliateLinkRow[]> {

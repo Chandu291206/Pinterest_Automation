@@ -19,6 +19,7 @@ export interface AffiliateLink {
   affiliate_url: string;
   image_url: string | null;
   price: string | null;
+  benefits: string[] | null;
   is_active: boolean;
   created_at: string;
 }
