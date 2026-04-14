@@ -14,6 +14,8 @@ import {
 import { cn } from "@/lib/utils";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type ProductRow = {
   id: string;
   product_name: string;
@@ -43,6 +45,13 @@ export default async function AdminProductsPage() {
         .order("created_at", { ascending: false }),
       supabase.from("campaigns").select("id,name,theme"),
     ]);
+
+    if (productsRes.error) {
+      throw new Error(`Failed to load products: ${productsRes.error.message}`);
+    }
+    if (campaignsRes.error) {
+      throw new Error(`Failed to load campaigns: ${campaignsRes.error.message}`);
+    }
 
     products = (productsRes.data ?? []) as ProductRow[];
     campaigns = (campaignsRes.data ?? []) as CampaignRow[];

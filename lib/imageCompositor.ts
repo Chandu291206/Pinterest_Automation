@@ -1,3 +1,4 @@
+import "server-only";
 import sharp from "sharp";
 
 type ThemeKey =
@@ -98,7 +99,7 @@ function buildOverlaySvg(headline: string, priceBadge: string, theme: string): B
   const leftBadgeX = 50;
 
   const priceTextWidth = Math.max(190, safePriceBadge.length * 20 + 56);
-  const shopText = "Shop Now →";
+  const shopText = "Shop Now &#8594;";
   const shopBadgeWidth = 300;
   const shopBadgeX = PIN_WIDTH - 50 - shopBadgeWidth;
 
@@ -165,6 +166,22 @@ function buildOverlaySvg(headline: string, priceBadge: string, theme: string): B
   return Buffer.from(svg);
 }
 
+async function createFallbackTile(width: number, height: number): Promise<Buffer> {
+  const svg = `
+  <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="${height}" fill="#F4F4F5" />
+    <text
+      x="${Math.floor(width / 2)}"
+      y="${Math.floor(height / 2)}"
+      font-family="Arial, sans-serif"
+      font-size="32"
+      text-anchor="middle"
+      fill="#71717A"
+    >Image unavailable</text>
+  </svg>`;
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
 function getCollageSlots(count: number): Slot[] {
   if (count === 2) {
     return [
@@ -205,7 +222,11 @@ export async function fetchImageBuffer(url: string): Promise<Buffer> {
     throw new Error(`Failed to download image: ${response.status} ${url}`);
   }
   const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  const buffer = Buffer.from(arrayBuffer);
+  if (!buffer.length) {
+    throw new Error(`Downloaded image is empty: ${url}`);
+  }
+  return buffer;
 }
 
 export async function resizeToFill(
@@ -247,12 +268,17 @@ export async function createCollagePin(params: CollagePinParams): Promise<Buffer
   }
 
   const slots = getCollageSlots(productImageUrls.length);
-  const sourceBuffers = await Promise.all(productImageUrls.map((url) => fetchImageBuffer(url)));
-
   const resizedBuffers = await Promise.all(
-    sourceBuffers.map((buffer, index) =>
-      resizeToFill(buffer, slots[index].width, slots[index].height)
-    )
+    productImageUrls.map(async (url, index) => {
+      const slot = slots[index];
+      try {
+        const source = await fetchImageBuffer(url);
+        return await resizeToFill(source, slot.width, slot.height);
+      } catch (error) {
+        console.error(`Collage image fetch failed for URL "${url}":`, error);
+        return createFallbackTile(slot.width, slot.height);
+      }
+    })
   );
 
   const collageBase = sharp({
@@ -307,3 +333,4 @@ export async function uploadPinImage(buffer: Buffer, pinId: string): Promise<str
   const { data } = supabaseServer.storage.from("pin-images").getPublicUrl(filePath);
   return data.publicUrl;
 }
+

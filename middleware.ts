@@ -9,6 +9,14 @@ function unauthorizedResponse() {
   });
 }
 
+function decodeBasicAuth(encodedValue: string): string | null {
+  try {
+    return atob(encodedValue);
+  } catch {
+    return null;
+  }
+}
+
 export function middleware(request: NextRequest) {
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
@@ -18,15 +26,13 @@ export function middleware(request: NextRequest) {
   }
 
   const authHeader = request.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Basic ")) {
+  if (!authHeader || !authHeader.toLowerCase().startsWith("basic ")) {
     return unauthorizedResponse();
   }
 
-  const encoded = authHeader.replace("Basic ", "").trim();
-  let decoded = "";
-  try {
-    decoded = atob(encoded);
-  } catch {
+  const encoded = authHeader.slice(6).trim();
+  const decoded = decodeBasicAuth(encoded);
+  if (!decoded) {
     return unauthorizedResponse();
   }
 
@@ -46,5 +52,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/campaigns/:path*",
+    "/api/affiliate-links/:path*",
+    "/api/pins",
+    "/api/pins/preview",
+  ],
 };

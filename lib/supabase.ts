@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-let cachedClient: ReturnType<typeof createClient<any>> | null = null;
+let cachedClient: SupabaseClient | null = null;
 
 export function getSupabaseServer() {
   if (cachedClient) {
@@ -18,7 +19,7 @@ export function getSupabaseServer() {
     throw new Error("Missing environment variable: SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  cachedClient = createClient<any>(supabaseUrl, serviceRoleKey, {
+  cachedClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

@@ -6,6 +6,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ASIN_REGEX = /(?:dp|product|amzn\.to)\/([A-Z0-9]{10})/i;
+const STRICT_ASIN_REGEX = /^[A-Z0-9]{10}$/;
+const validThemes = new Set(["fitness", "tech", "fashion", "home", "beauty", "productivity"]);
 
 function parseAsinFromUrl(url: string): string | null {
   const match = url.match(ASIN_REGEX);
@@ -54,9 +56,34 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (!validThemes.has(theme)) {
+      return NextResponse.json({ error: "Invalid theme value." }, { status: 400 });
+    }
+    if (asinInput && !STRICT_ASIN_REGEX.test(asinInput)) {
+      return NextResponse.json(
+        { error: "ASIN must be 10 uppercase letters or numbers." },
+        { status: 400 }
+      );
+    }
 
     const parsedAsin = parseAsinFromUrl(affiliateUrl);
     const asin = asinInput || parsedAsin || fallbackAsin();
+
+    const { data: campaignExists, error: campaignCheckError } = await getSupabaseServer()
+      .from("campaigns")
+      .select("id")
+      .eq("id", campaignId)
+      .maybeSingle();
+
+    if (campaignCheckError) {
+      return NextResponse.json(
+        { error: `Failed to verify campaign: ${campaignCheckError.message}` },
+        { status: 500 }
+      );
+    }
+    if (!campaignExists) {
+      return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
+    }
 
     const { data, error } = await getSupabaseServer()
       .from("affiliate_links")
@@ -74,6 +101,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !data) {
+      if (error?.code === "23503") {
+        return NextResponse.json({ error: "Invalid campaign reference." }, { status: 400 });
+      }
       return NextResponse.json(
         { error: error?.message ?? "Failed to create product." },
         { status: 500 }

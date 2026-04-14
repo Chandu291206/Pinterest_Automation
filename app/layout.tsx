@@ -16,6 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="font-sans">
+      <head>
+        <meta name="p:domain_verify" content="13d82dacb6d96d58fe06ec43dbea2fcb"/>
+      </head>
       <body className={`${inter.className} min-h-screen bg-white text-gray-900`}>{children}</body>
     </html>
   );

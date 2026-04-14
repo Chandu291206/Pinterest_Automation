@@ -36,6 +36,7 @@ export interface Pin {
   pin_format: "single" | "collage";
   variant: string;
   status: string;
+  error_message: string | null;
   posted_at: string | null;
   impressions: number;
   saves: number;

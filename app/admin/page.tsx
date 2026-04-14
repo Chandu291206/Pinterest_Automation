@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type PinRow = {
   id: string;
   title: string;
@@ -59,6 +61,19 @@ export default async function DashboardPage() {
         .order("posted_at", { ascending: false, nullsFirst: false })
         .limit(10),
     ]);
+
+    if (pinsCountRes.error) {
+      throw new Error(`Failed to load total pins: ${pinsCountRes.error.message}`);
+    }
+    if (activeCampaignsRes.error) {
+      throw new Error(`Failed to load active campaigns: ${activeCampaignsRes.error.message}`);
+    }
+    if (pinStatsRes.error) {
+      throw new Error(`Failed to load pin stats: ${pinStatsRes.error.message}`);
+    }
+    if (recentPinsRes.error) {
+      throw new Error(`Failed to load recent pins: ${recentPinsRes.error.message}`);
+    }
 
     totalPinsPosted = pinsCountRes.count ?? 0;
     activeCampaigns = activeCampaignsRes.count ?? 0;

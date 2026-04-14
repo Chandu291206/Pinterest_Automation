@@ -16,6 +16,7 @@ const postingHourOptions = [
   { value: 6, label: "6am" },
   { value: 9, label: "9am" },
   { value: 12, label: "12pm" },
+  { value: 14, label: "2pm" },
   { value: 15, label: "3pm" },
   { value: 18, label: "6pm" },
   { value: 20, label: "8pm" },

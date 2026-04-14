@@ -30,6 +30,7 @@ function parseAsin(url: string): string {
 
 export function AddProductForm({ campaigns }: Props) {
   const router = useRouter();
+  const hasCampaigns = campaigns.length > 0;
   const [productName, setProductName] = useState("");
   const [affiliateUrl, setAffiliateUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -160,13 +161,24 @@ export function AddProductForm({ campaigns }: Props) {
                   <SelectValue placeholder="Select campaign" />
                 </SelectTrigger>
                 <SelectContent>
-                  {campaigns.map((campaign) => (
-                    <SelectItem key={campaign.id} value={campaign.id}>
-                      {campaign.name} ({campaign.theme})
+                  {hasCampaigns ? (
+                    campaigns.map((campaign) => (
+                      <SelectItem key={campaign.id} value={campaign.id}>
+                        {campaign.name} ({campaign.theme})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No campaigns available
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
+              {!hasCampaigns ? (
+                <p className="text-xs text-muted-foreground">
+                  Create a campaign first, then add products.
+                </p>
+              ) : null}
             </div>
 
             <div className="grid gap-2">
@@ -184,7 +196,7 @@ export function AddProductForm({ campaigns }: Props) {
 
             {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
 
-            <Button type="submit" disabled={isSubmitting || !campaignId}>
+            <Button type="submit" disabled={isSubmitting || !campaignId || !hasCampaigns}>
               {isSubmitting ? "Saving..." : "Add Product"}
             </Button>
           </form>

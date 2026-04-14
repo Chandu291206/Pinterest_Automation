@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type PinRow = {
   id: string;
   title: string;
@@ -36,11 +38,14 @@ export default async function PinsPage() {
   let dataError = "";
 
   try {
-    const { data } = await getSupabaseServer()
+    const { data, error } = await getSupabaseServer()
       .from("pins")
       .select("id,title,status,pin_format,impressions,clicks,posted_at")
       .order("posted_at", { ascending: false, nullsFirst: false })
       .limit(50);
+    if (error) {
+      throw new Error(`Failed to load pins: ${error.message}`);
+    }
     pins = (data ?? []) as PinRow[];
   } catch (error) {
     dataError = error instanceof Error ? error.message : "Failed to load pins.";

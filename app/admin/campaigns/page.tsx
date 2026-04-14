@@ -13,6 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type CampaignRow = {
   id: string;
   name: string;
@@ -34,6 +36,13 @@ export default async function CampaignsPage() {
       }),
       supabase.from("pins").select("campaign_id"),
     ]);
+
+    if (campaignsRes.error) {
+      throw new Error(`Failed to load campaigns: ${campaignsRes.error.message}`);
+    }
+    if (pinsRes.error) {
+      throw new Error(`Failed to load campaign pin counts: ${pinsRes.error.message}`);
+    }
 
     campaigns = (campaignsRes.data ?? []) as CampaignRow[];
     for (const row of pinsRes.data ?? []) {

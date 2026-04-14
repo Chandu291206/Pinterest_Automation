@@ -1,3 +1,4 @@
+import "server-only";
 import OpenAI from "openai";
 
 export type GeneratePinContentParams = {
@@ -87,6 +88,19 @@ function safeChars(text: string, maxChars: number): string {
   return trimmed.length <= maxChars ? trimmed : `${trimmed.slice(0, maxChars - 3).trim()}...`;
 }
 
+function ensureSoftCta(description: string): string {
+  const trimmed = description.trim();
+  if (!trimmed) {
+    return "Discover how this pick can fit your routine, and explore more details when you are ready.";
+  }
+
+  if (/[.?!]\s*$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `${trimmed}.`;
+}
+
 export async function generatePinContent(
   params: GeneratePinContentParams
 ): Promise<PinContent> {
@@ -147,9 +161,9 @@ export async function generatePinContent(
     throw new Error("OpenAI returned an empty response.");
   }
 
-  let parsed: any;
+  let parsed: Record<string, unknown>;
   try {
-    parsed = JSON.parse(content);
+    parsed = JSON.parse(content) as Record<string, unknown>;
   } catch (error) {
     throw new Error(`Failed to parse JSON response from OpenAI: ${String(error)}`);
   }
@@ -161,7 +175,7 @@ export async function generatePinContent(
   ];
 
   const title = safeChars(String(parsed?.title ?? `${params.productName} Ideas`), 100);
-  const description = String(parsed?.description ?? "").trim();
+  const description = ensureSoftCta(String(parsed?.description ?? "").trim());
   const hashtags = normalizeHashtags(parsed?.hashtags, fallbackTerms);
   const overlayHeadline = safeWords(String(parsed?.overlay_headline ?? params.theme), 6);
   const priceBadgeText =

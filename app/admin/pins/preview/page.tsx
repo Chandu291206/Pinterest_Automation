@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,14 @@ export default function PinPreviewPage() {
         .filter(Boolean),
     [imageUrlsRaw]
   );
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   async function handleGenerate() {
     setIsLoading(true);
@@ -91,7 +99,7 @@ export default function PinPreviewPage() {
               <Label>Format</Label>
               <Select
                 value={format}
-                onValueChange={(value) => setFormat((value as "single" | "collage") ?? "single")}
+                onValueChange={(value) => setFormat(value === "collage" ? "collage" : "single")}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select format" />

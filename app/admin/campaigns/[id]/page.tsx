@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/table";
 import { getSupabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type CampaignRow = {
   id: string;
   name: string;
@@ -57,6 +59,7 @@ export default async function CampaignDetailPage({
 }) {
   const supabase = getSupabaseServer();
   const campaignId = params.id;
+  let dataError = "";
 
   const [campaignRes, pinsRes, affiliateRes] = await Promise.all([
     supabase
@@ -76,8 +79,16 @@ export default async function CampaignDetailPage({
       .order("created_at", { ascending: false }),
   ]);
 
-  const campaign = campaignRes.data as CampaignRow | null;
-  if (!campaign) {
+  if (campaignRes.error) {
+    dataError = `Failed to load campaign: ${campaignRes.error.message}`;
+  } else if (pinsRes.error) {
+    dataError = `Failed to load campaign pins: ${pinsRes.error.message}`;
+  } else if (affiliateRes.error) {
+    dataError = `Failed to load affiliate links: ${affiliateRes.error.message}`;
+  }
+
+  const campaign = (campaignRes.data as CampaignRow | null) ?? null;
+  if (!dataError && !campaign) {
     notFound();
   }
 
@@ -91,18 +102,28 @@ export default async function CampaignDetailPage({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link href="/admin/campaigns" className="text-sm text-muted-foreground hover:underline">
-            {"<- Back to campaigns"}
+            {"< Back to campaigns"}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{campaign.name}</h1>
-          <div className="mt-2 flex items-center gap-2">
-            <Badge variant={campaign.status === "active" ? "default" : "secondary"}>
-              {campaign.status ?? "unknown"}
-            </Badge>
-            <span className="text-sm capitalize text-muted-foreground">{campaign.theme}</span>
-          </div>
+          {campaign ? <h1 className="mt-1 text-2xl font-semibold">{campaign.name}</h1> : null}
+          {campaign ? (
+            <div className="mt-2 flex items-center gap-2">
+              <Badge variant={campaign.status === "active" ? "default" : "secondary"}>
+                {campaign.status ?? "unknown"}
+              </Badge>
+              <span className="text-sm capitalize text-muted-foreground">{campaign.theme}</span>
+            </div>
+          ) : null}
         </div>
-        <CampaignStatusToggle campaignId={campaign.id} currentStatus={campaign.status} />
+        {campaign ? (
+          <CampaignStatusToggle campaignId={campaign.id} currentStatus={campaign.status} />
+        ) : null}
       </header>
+
+      {dataError ? (
+        <Card>
+          <CardContent className="pt-6 text-sm text-destructive">{dataError}</CardContent>
+        </Card>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -129,7 +150,7 @@ export default async function CampaignDetailPage({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Posts Per Day</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{campaign.posts_per_day ?? 3}</CardContent>
+          <CardContent className="text-2xl font-semibold">{campaign?.posts_per_day ?? 3}</CardContent>
         </Card>
       </section>
 
