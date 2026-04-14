@@ -90,15 +90,15 @@ export default async function CampaignDetailPage({
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/campaigns" className="text-sm text-muted-foreground hover:underline">
-            ← Back to campaigns
+          <Link href="/admin/campaigns" className="text-sm text-muted-foreground hover:underline">
+            {"<- Back to campaigns"}
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{campaign.name}</h1>
           <div className="mt-2 flex items-center gap-2">
             <Badge variant={campaign.status === "active" ? "default" : "secondary"}>
               {campaign.status ?? "unknown"}
             </Badge>
-            <span className="text-sm text-muted-foreground capitalize">{campaign.theme}</span>
+            <span className="text-sm capitalize text-muted-foreground">{campaign.theme}</span>
           </div>
         </div>
         <CampaignStatusToggle campaignId={campaign.id} currentStatus={campaign.status} />
@@ -159,8 +159,8 @@ export default async function CampaignDetailPage({
                     <h3 className="line-clamp-2 font-medium">{pin.title}</h3>
                     <p className="text-xs text-muted-foreground">{formatDate(pin.posted_at)}</p>
                     <div className="text-xs text-muted-foreground">
-                      {Number(pin.impressions ?? 0).toLocaleString()} impressions ·{" "}
-                      {Number(pin.saves ?? 0).toLocaleString()} saves ·{" "}
+                      {Number(pin.impressions ?? 0).toLocaleString()} impressions |{" "}
+                      {Number(pin.saves ?? 0).toLocaleString()} saves |{" "}
                       {Number(pin.clicks ?? 0).toLocaleString()} clicks
                     </div>
                   </div>

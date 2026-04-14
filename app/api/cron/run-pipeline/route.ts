@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { searchAmazonProducts } from "@/lib/amazon";
 import { generatePinContent } from "@/lib/contentGenerator";
 import {
   createCollagePin,
@@ -72,24 +71,8 @@ function normalizeNumberArray(value: unknown, fallback: number[]): number[] {
   return numbers.length > 0 ? numbers : fallback;
 }
 
-function normalizeStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
-}
-
 function toUtcDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
-}
-
-function toSearchIndex(theme: string): string {
-  const normalized = theme.toLowerCase();
-  if (normalized.includes("fitness")) return "SportsAndOutdoors";
-  if (normalized.includes("tech")) return "Electronics";
-  if (normalized.includes("fashion")) return "Fashion";
-  if (normalized.includes("home")) return "HomeAndKitchen";
-  if (normalized.includes("beauty")) return "Beauty";
-  if (normalized.includes("productivity")) return "OfficeProducts";
-  return "All";
 }
 
 function buildTrackingUrl(request: NextRequest, affiliateLinkId: string): string {
@@ -108,39 +91,6 @@ async function getCampaignAffiliateLinks(campaignId: string): Promise<AffiliateL
   }
 
   return (data ?? []) as AffiliateLinkRow[];
-}
-
-async function createAffiliateLinkFromAmazon(campaign: CampaignRow): Promise<AffiliateLinkRow> {
-  const keywords = normalizeStringArray(campaign.amazon_keywords);
-  const keyword = keywords.length > 0 ? randomFrom(keywords) : campaign.theme;
-  const searchIndex = toSearchIndex(campaign.theme);
-  const products = await searchAmazonProducts(keyword, searchIndex);
-  const first = products[0];
-
-  if (!first) {
-    throw new Error("Amazon lookup returned no products.");
-  }
-
-  const { data, error } = await getSupabaseServer()
-    .from("affiliate_links")
-    .insert({
-      campaign_id: campaign.id,
-      asin: first.asin,
-      product_name: first.title,
-      product_category: searchIndex,
-      affiliate_url: first.url,
-      image_url: first.imageUrl,
-      price: first.price,
-      is_active: true,
-    })
-    .select("*")
-    .single();
-
-  if (error || !data) {
-    throw new Error(`Failed to insert Amazon affiliate link: ${error?.message ?? "unknown error"}`);
-  }
-
-  return data as AffiliateLinkRow;
 }
 
 async function ensureFallbackAffiliateLink(campaign: CampaignRow): Promise<AffiliateLinkRow | null> {
@@ -261,14 +211,7 @@ async function processCampaign(campaign: CampaignRow, request: NextRequest): Pro
     }
 
     selectedLink = randomFrom(links);
-    let allLinks = links;
-
-    if (!selectedLink.image_url) {
-      const amazonLink = await createAffiliateLinkFromAmazon(campaign);
-      selectedLink = amazonLink;
-      allLinks = [...links, amazonLink];
-    }
-
+    const allLinks = links;
     if (!selectedLink.image_url) {
       throw new Error("Selected affiliate link has no image_url.");
     }

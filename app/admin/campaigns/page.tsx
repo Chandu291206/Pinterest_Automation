@@ -54,7 +54,7 @@ export default async function CampaignsPage() {
             Manage campaign settings, status, and posting volume.
           </p>
         </div>
-        <Link href="/campaigns/new" className={cn(buttonVariants())}>
+        <Link href="/admin/campaigns/new" className={cn(buttonVariants())}>
           Create New Campaign
         </Link>
       </header>
@@ -88,7 +88,10 @@ export default async function CampaignsPage() {
                 {campaigns.map((campaign) => (
                   <TableRow key={campaign.id}>
                     <TableCell>
-                      <Link href={`/campaigns/${campaign.id}`} className="font-medium hover:underline">
+                      <Link
+                        href={`/admin/campaigns/${campaign.id}`}
+                        className="font-medium hover:underline"
+                      >
                         {campaign.name}
                       </Link>
                     </TableCell>

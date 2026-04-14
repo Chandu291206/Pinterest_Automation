@@ -82,7 +82,7 @@ export default function NewCampaignPage() {
 
       const payload = await response.json();
       const campaignId = payload?.campaign?.id;
-      router.push(campaignId ? `/campaigns/${campaignId}` : "/campaigns");
+      router.push(campaignId ? `/admin/campaigns/${campaignId}` : "/admin/campaigns");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to create campaign.");
     } finally {
@@ -99,7 +99,7 @@ export default function NewCampaignPage() {
             Set up publishing cadence and product discovery settings.
           </p>
         </div>
-        <Link href="/campaigns" className={cn(buttonVariants({ variant: "outline" }))}>
+        <Link href="/admin/campaigns" className={cn(buttonVariants({ variant: "outline" }))}>
           Back to Campaigns
         </Link>
       </header>

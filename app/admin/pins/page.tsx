@@ -53,7 +53,7 @@ export default async function PinsPage() {
           <h1 className="text-2xl font-semibold">Pins</h1>
           <p className="text-sm text-muted-foreground">Latest published and queued pins.</p>
         </div>
-        <Link href="/pins/preview" className={cn(buttonVariants())}>
+        <Link href="/admin/pins/preview" className={cn(buttonVariants())}>
           Open Preview Tool
         </Link>
       </header>

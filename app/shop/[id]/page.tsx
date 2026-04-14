@@ -1,5 +1,8 @@
 import OpenAI from "openai";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProductCard } from "@/components/public/product-card";
+import { PublicProductCard, formatThemeLabel } from "@/lib/public-products";
 import { getSupabaseServer } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -7,11 +10,25 @@ export const dynamic = "force-dynamic";
 
 type AffiliateLinkRow = {
   id: string;
+  campaign_id: string;
   product_name: string;
   affiliate_url: string;
   image_url: string | null;
   price: string | null;
   benefits: string[] | null;
+};
+
+type CampaignRow = {
+  id: string;
+  theme: string;
+};
+
+type PinRow = {
+  id: string;
+  affiliate_link_id: string;
+  campaign_id: string;
+  image_url: string | null;
+  created_at: string | null;
 };
 
 function sanitizeBenefits(value: unknown): string[] {
@@ -93,12 +110,23 @@ async function incrementPinClicks(affiliateLinkId: string) {
 async function getAffiliateLink(id: string): Promise<AffiliateLinkRow | null> {
   const { data, error } = await getSupabaseServer()
     .from("affiliate_links")
-    .select("id,product_name,affiliate_url,image_url,price,benefits")
+    .select("id,campaign_id,product_name,affiliate_url,image_url,price,benefits")
     .eq("id", id)
     .maybeSingle();
 
   if (error) return null;
   return (data as AffiliateLinkRow | null) ?? null;
+}
+
+async function getCampaign(id: string): Promise<CampaignRow | null> {
+  const { data, error } = await getSupabaseServer()
+    .from("campaigns")
+    .select("id,theme")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) return null;
+  return (data as CampaignRow | null) ?? null;
 }
 
 async function getOrCreateBenefits(link: AffiliateLinkRow): Promise<string[]> {
@@ -121,20 +149,87 @@ async function getOrCreateBenefits(link: AffiliateLinkRow): Promise<string[]> {
   return generated;
 }
 
+async function getMoreLikeThis(link: AffiliateLinkRow, theme: string): Promise<PublicProductCard[]> {
+  const supabase = getSupabaseServer();
+  const pinsRes = await supabase
+    .from("pins")
+    .select("id,affiliate_link_id,campaign_id,image_url,created_at")
+    .eq("campaign_id", link.campaign_id)
+    .eq("status", "posted")
+    .neq("affiliate_link_id", link.id)
+    .order("created_at", { ascending: false, nullsFirst: false })
+    .limit(12);
+
+  const pins = (pinsRes.data ?? []) as PinRow[];
+  if (pins.length === 0) return [];
+
+  const uniqueAffiliateIds = Array.from(new Set(pins.map((pin) => pin.affiliate_link_id))).slice(0, 3);
+  const affiliateRes = await supabase
+    .from("affiliate_links")
+    .select("id,product_name,price,image_url")
+    .in("id", uniqueAffiliateIds);
+
+  const affiliateMap = new Map<
+    string,
+    { id: string; product_name: string; price: string | null; image_url: string | null }
+  >();
+  for (const row of affiliateRes.data ?? []) {
+    affiliateMap.set(String(row.id), {
+      id: String(row.id),
+      product_name: String(row.product_name ?? "Product"),
+      price: row.price ? String(row.price) : null,
+      image_url: row.image_url ? String(row.image_url) : null,
+    });
+  }
+
+  const byAffiliate = new Map<string, PinRow>();
+  for (const pin of pins) {
+    if (uniqueAffiliateIds.includes(pin.affiliate_link_id) && !byAffiliate.has(pin.affiliate_link_id)) {
+      byAffiliate.set(pin.affiliate_link_id, pin);
+    }
+  }
+
+  return uniqueAffiliateIds
+    .map((affiliateId) => {
+      const pin = byAffiliate.get(affiliateId);
+      const affiliate = affiliateMap.get(affiliateId);
+      if (!pin || !affiliate) return null;
+      return {
+        pinId: pin.id,
+        affiliateLinkId: affiliateId,
+        campaignId: pin.campaign_id,
+        productName: affiliate.product_name,
+        price: affiliate.price,
+        theme,
+        imageUrl: pin.image_url ?? affiliate.image_url ?? null,
+        createdAt: pin.created_at,
+      } satisfies PublicProductCard;
+    })
+    .filter((item): item is PublicProductCard => item !== null);
+}
+
 export default async function ShopProductPage({ params }: { params: { id: string } }) {
   const link = await getAffiliateLink(params.id);
   if (!link?.affiliate_url || !link.product_name) {
     notFound();
   }
 
-  const [benefits] = await Promise.all([
+  const campaign = await getCampaign(link.campaign_id);
+  const theme = campaign?.theme ?? "general";
+
+  const [benefits, moreLikeThis] = await Promise.all([
     getOrCreateBenefits(link),
+    getMoreLikeThis(link, theme),
     incrementPinClicks(link.id),
   ]);
 
   return (
     <main className="min-h-screen bg-white px-4 py-6">
       <div className="mx-auto w-full max-w-[480px] space-y-5">
+        <Link href={`/niche/${theme}`} className="text-xs text-gray-500 hover:underline">
+          More {formatThemeLabel(theme)} picks
+        </Link>
+
         {link.image_url ? (
           <img
             src={link.image_url}
@@ -160,7 +255,7 @@ export default async function ShopProductPage({ params }: { params: { id: string
         <ul className="space-y-2 text-sm text-gray-700">
           {benefits.map((benefit, idx) => (
             <li key={`${benefit}-${idx}`} className="flex items-start gap-2">
-              <span className="mt-0.5 text-[#FF9900]">•</span>
+              <span className="mt-0.5 text-[#FF9900]">-</span>
               <span>{benefit}</span>
             </li>
           ))}
@@ -179,6 +274,17 @@ export default async function ShopProductPage({ params }: { params: { id: string
           As an Amazon Associate I earn from qualifying purchases
         </p>
       </div>
+
+      {moreLikeThis.length > 0 ? (
+        <section className="mx-auto mt-10 w-full max-w-6xl space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">More like this</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {moreLikeThis.map((item) => (
+              <ProductCard key={item.pinId} item={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
