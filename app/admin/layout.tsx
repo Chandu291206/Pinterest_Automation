@@ -23,15 +23,17 @@ export default function AdminLayout({
 
       {/* Mobile Sidebar */}
       <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed top-4 left-4 z-40 md:hidden"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </SheetTrigger>
+        <SheetTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              className="fixed top-4 left-4 z-40 md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          }
+        />
         <SheetContent side="left" className="w-64">
           <div className="p-5">
             <h1 className="text-lg font-semibold">Pinterest System</h1>
