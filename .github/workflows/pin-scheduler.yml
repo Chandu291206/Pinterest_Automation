@@ -1,0 +1,33 @@
+name: Pin Scheduler
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+    - cron: "0 9,14,20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-pipeline:
+    name: Run Pin Pipeline
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 9,14,20 * * *'
+    steps:
+      - name: Trigger /api/cron/run-pipeline
+        run: |
+          curl --fail --show-error --silent \
+            -X GET "${{ secrets.APP_BASE_URL }}/api/cron/run-pipeline" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+  sync-analytics:
+    name: Sync Analytics
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 6 * * *'
+    steps:
+      - name: Trigger /api/cron/sync-analytics
+        run: |
+          curl --fail --show-error --silent \
+            -X GET "${{ secrets.APP_BASE_URL }}/api/cron/sync-analytics" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
