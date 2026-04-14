@@ -124,7 +124,7 @@ export default function NewCampaignPage() {
 
             <div className="grid gap-2">
               <Label htmlFor="campaign-theme">Theme</Label>
-              <Select value={theme} onValueChange={(value) => setTheme(value ?? "fitness")}>
+              <Select value={theme} onValueChange={(value) => setTheme(value || "fitness")}>
                 <SelectTrigger id="campaign-theme" className="w-full">
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>

@@ -211,22 +211,27 @@ function getCollageSlots(count: number): Slot[] {
 }
 
 export async function fetchImageBuffer(url: string): Promise<Buffer> {
-  const response = await fetch(url, {
-    cache: "no-store",
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-      Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.status} ${url}`);
+  try {
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status} ${url}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    if (!buffer.length) {
+      throw new Error(`Downloaded image is empty: ${url}`);
+    }
+    return buffer;
+  } catch (error) {
+    console.error(`Image fetch failed for URL "${url}":`, error);
+    throw error;
   }
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  if (!buffer.length) {
-    throw new Error(`Downloaded image is empty: ${url}`);
-  }
-  return buffer;
 }
 
 export async function resizeToFill(
@@ -245,7 +250,14 @@ export async function resizeToFill(
 export async function createSingleProductPin(
   params: SingleProductPinParams
 ): Promise<Buffer> {
-  const productBuffer = await fetchImageBuffer(params.productImageUrl);
+  let productBuffer: Buffer;
+  try {
+    productBuffer = await fetchImageBuffer(params.productImageUrl);
+  } catch (error) {
+    console.error(`Failed to fetch product image for single pin:`, error);
+    productBuffer = await createFallbackTile(PIN_WIDTH, PIN_HEIGHT);
+  }
+  
   const background = await resizeToFill(productBuffer, PIN_WIDTH, PIN_HEIGHT);
   const overlay = buildOverlaySvg(params.headline, params.priceBadge, params.theme);
 

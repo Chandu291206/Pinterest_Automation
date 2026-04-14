@@ -113,7 +113,7 @@ export default function PinPreviewPage() {
 
             <div className="grid gap-2">
               <Label>Theme</Label>
-              <Select value={theme} onValueChange={(value) => setTheme(value ?? "fitness")}>
+              <Select value={theme} onValueChange={(value) => setTheme(value || "fitness")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>

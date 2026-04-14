@@ -18,10 +18,15 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid status." }, { status: 400 });
     }
 
+    const campaignId = String(params?.id ?? "").trim();
+    if (!campaignId) {
+      return NextResponse.json({ error: "Campaign id is required." }, { status: 400 });
+    }
+
     const { data, error } = await getSupabaseServer()
       .from("campaigns")
       .update({ status })
-      .eq("id", params.id)
+      .eq("id", campaignId)
       .select("*")
       .maybeSingle();
 

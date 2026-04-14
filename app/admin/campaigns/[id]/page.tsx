@@ -30,7 +30,6 @@ type PinRow = {
   title: string;
   image_url: string | null;
   impressions: number | null;
-  saves: number | null;
   clicks: number | null;
   posted_at: string | null;
 };
@@ -58,7 +57,10 @@ export default async function CampaignDetailPage({
   params: { id: string };
 }) {
   const supabase = getSupabaseServer();
-  const campaignId = params.id;
+  const campaignId = String(params?.id ?? "").trim();
+  if (!campaignId) {
+    notFound();
+  }
   let dataError = "";
 
   const [campaignRes, pinsRes, affiliateRes] = await Promise.all([
@@ -69,7 +71,7 @@ export default async function CampaignDetailPage({
       .maybeSingle(),
     supabase
       .from("pins")
-      .select("id,title,image_url,impressions,saves,clicks,posted_at")
+      .select("id,title,image_url,impressions,clicks,posted_at")
       .eq("campaign_id", campaignId)
       .order("posted_at", { ascending: false, nullsFirst: false }),
     supabase
@@ -181,7 +183,6 @@ export default async function CampaignDetailPage({
                     <p className="text-xs text-muted-foreground">{formatDate(pin.posted_at)}</p>
                     <div className="text-xs text-muted-foreground">
                       {Number(pin.impressions ?? 0).toLocaleString()} impressions |{" "}
-                      {Number(pin.saves ?? 0).toLocaleString()} saves |{" "}
                       {Number(pin.clicks ?? 0).toLocaleString()} clicks
                     </div>
                   </div>

@@ -140,7 +140,7 @@ export function AddProductForm({ campaigns }: Props) {
 
             <div className="grid gap-2">
               <Label>Category/Theme</Label>
-              <Select value={theme} onValueChange={(value) => setTheme(value ?? "fitness")}>
+              <Select value={theme} onValueChange={(value) => setTheme(value || "fitness")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>
@@ -156,7 +156,7 @@ export function AddProductForm({ campaigns }: Props) {
 
             <div className="grid gap-2">
               <Label>Campaign</Label>
-              <Select value={campaignId} onValueChange={(value) => setCampaignId(value ?? "")}>
+              <Select value={campaignId} onValueChange={(value) => setCampaignId(value || "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select campaign" />
                 </SelectTrigger>

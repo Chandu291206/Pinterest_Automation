@@ -11,8 +11,11 @@ function unauthorizedResponse() {
 
 function decodeBasicAuth(encodedValue: string): string | null {
   try {
+    if (!encodedValue || typeof encodedValue !== "string") {
+      return null;
+    }
     return atob(encodedValue);
-  } catch {
+  } catch (error) {
     return null;
   }
 }

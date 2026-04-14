@@ -12,10 +12,15 @@ export async function PATCH(
     const body = await request.json();
     const isActive = Boolean(body?.is_active);
 
+    const affiliateId = String(params?.id ?? "").trim();
+    if (!affiliateId) {
+      return NextResponse.json({ error: "Affiliate link id is required." }, { status: 400 });
+    }
+
     const { data, error } = await getSupabaseServer()
       .from("affiliate_links")
       .update({ is_active: isActive })
-      .eq("id", params.id)
+      .eq("id", affiliateId)
       .select("id,is_active")
       .maybeSingle();
 
