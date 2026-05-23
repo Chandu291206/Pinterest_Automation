@@ -1,6 +1,6 @@
 # Pinterest Affiliate System
 
-Next.js 14 app for running Pinterest affiliate campaigns with Supabase, Upstash Redis, OpenAI, and Amazon/Pinterest APIs.
+Next.js app for running Pinterest affiliate campaigns with Supabase, OpenAI, Pinterest OAuth, and Cloudinary image uploads.
 
 ## Deploy to Vercel
 
@@ -27,10 +27,14 @@ Add these values in Vercel for **Production** (and Preview if needed):
 - `AMAZON_ACCESS_KEY`
 - `AMAZON_SECRET_KEY`
 - `AMAZON_ASSOCIATE_TAG`
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
 - `OPENAI_API_KEY`
 - `CRON_SECRET`
+- `LLM_PROVIDER` (`openai` or `local`)
+- `LOCAL_LLM_URL` (required when `LLM_PROVIDER=local`)
+- `LOCAL_LLM_MODEL` (required when `LLM_PROVIDER=local`)
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
 
 ## Where To Get API Keys (Direct Links)
 
@@ -42,8 +46,6 @@ Add these values in Vercel for **Production** (and Preview if needed):
   - Associate tag comes from Associates account.
 - Amazon PA API docs: https://webservices.amazon.com/paapi5/documentation/
   - AWS access/secret keys: https://console.aws.amazon.com/iam/home#/security_credentials
-- Upstash Redis: https://console.upstash.com/redis
-  - Copy REST URL and REST token from your Redis database details.
 - OpenAI API keys: https://platform.openai.com/api-keys
 - Vercel env settings: https://vercel.com/dashboard
 
@@ -61,13 +63,12 @@ Returns:
   "timestamp": "2026-04-14T00:00:00.000Z",
   "env_check": {
     "supabase": true,
-    "redis": true,
     "openai": true
   }
 }
 ```
 
-The route performs lightweight live checks against Supabase, Redis, and OpenAI.
+The route performs lightweight live checks against Supabase and OpenAI.
 
 ## Manually Trigger Pipeline
 
@@ -89,7 +90,7 @@ curl -X GET "https://YOUR-VERCEL-DOMAIN/api/cron/sync-analytics" \
 
 Option 1 (UI):
 - Open `/campaigns/new` in the dashboard.
-- Fill campaign name, theme, keywords, posts/day, posting hours, and board ID.
+- Fill campaign name, theme, keywords, posts/day, interval, and board ID.
 - Submit.
 
 Option 2 (API):
@@ -102,7 +103,7 @@ curl -X POST "https://YOUR-VERCEL-DOMAIN/api/campaigns" \
     "theme":"fitness",
     "amazon_keywords":["kettlebell","resistance bands","home gym"],
     "posts_per_day":3,
-    "posting_hours":[9,14,20],
+    "interval_hours":2,
     "board_id":"1234567890"
   }'
 ```
@@ -113,10 +114,8 @@ To stay within typical API and account safety limits:
 
 - Start with `posts_per_day = 3` per campaign.
 - Keep each campaign under `5-10` posts/day until results are stable.
-- Prefer staggered posting hours (for example `[9,14,20]` UTC).
+- Prefer interval-based scheduling (for example every `2` or `4` hours).
 - Increase gradually after 7-14 days of stable performance and no API/rate-limit errors.
 - Keep an eye on `/api/health` and cron logs in Vercel.
 
-The pipeline already enforces per-campaign daily caps using Redis:
-- Key format: `pins:{campaignId}:{YYYY-MM-DD}`
-- It skips campaigns once `posts_per_day` is reached.
+The pipeline enforces per-campaign daily caps directly from Supabase and also respects campaign `interval_hours`.
