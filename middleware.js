@@ -1,55 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-function unauthorizedResponse() {
-    return new NextResponse("Authentication required", {
-        status: 401,
-        headers: {
-            "WWW-Authenticate": 'Basic realm="Admin Area"',
-        },
-    });
+import { NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+
+export async function middleware(request) {
+  const sessionCookie = request.cookies.get("admin_session");
+
+  if (!sessionCookie?.value) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const payload = await verifyToken(sessionCookie.value);
+
+  if (!payload || payload.user !== "admin") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
 }
-function decodeBasicAuth(encodedValue) {
-    try {
-        if (!encodedValue || typeof encodedValue !== "string") {
-            return null;
-        }
-        return atob(encodedValue);
-    }
-    catch (error) {
-        return null;
-    }
-}
-export function middleware(request) {
-    const username = process.env.ADMIN_USERNAME;
-    const password = process.env.ADMIN_PASSWORD;
-    if (!username || !password) {
-        return new NextResponse("Admin credentials are not configured.", { status: 500 });
-    }
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.toLowerCase().startsWith("basic ")) {
-        return unauthorizedResponse();
-    }
-    const encoded = authHeader.slice(6).trim();
-    const decoded = decodeBasicAuth(encoded);
-    if (!decoded) {
-        return unauthorizedResponse();
-    }
-    const separator = decoded.indexOf(":");
-    if (separator === -1) {
-        return unauthorizedResponse();
-    }
-    const providedUser = decoded.slice(0, separator);
-    const providedPass = decoded.slice(separator + 1);
-    if (providedUser !== username || providedPass !== password) {
-        return unauthorizedResponse();
-    }
-    return NextResponse.next();
-}
+
 export const config = {
-    matcher: [
-        "/admin/:path*",
-        "/api/admin/:path*",
-        "/api/campaigns/:path*",
-        "/api/affiliate-links/:path*",
-        "/api/pins/:path*",
-    ],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/campaigns/:path*",
+    "/api/affiliate-links/:path*",
+    "/api/pins/:path*",
+  ],
 };

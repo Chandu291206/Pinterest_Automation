@@ -27,7 +27,7 @@ Add these values in Vercel for **Production** (and Preview if needed):
 - `AMAZON_ACCESS_KEY`
 - `AMAZON_SECRET_KEY`
 - `AMAZON_ASSOCIATE_TAG`
-- `OPENAI_API_KEY`
+- `OPENAI_API_KEY`  
 - `CRON_SECRET`
 - `LLM_PROVIDER` (`openai` or `local`)
 - `LOCAL_LLM_URL` (required when `LLM_PROVIDER=local`)

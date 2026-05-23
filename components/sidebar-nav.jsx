@@ -43,6 +43,12 @@ export function SidebarNav() {
           </Link>
         );
       })}
+      <Link
+        href="/api/auth/logout"
+        className="block rounded-md px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors mt-4 border border-transparent hover:border-red-500/20"
+      >
+        Logout
+      </Link>
     </nav>
   );
 }
